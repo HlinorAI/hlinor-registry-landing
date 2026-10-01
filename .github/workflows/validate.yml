@@ -1,0 +1,52 @@
+name: Validate landing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Guard self-test (probes must be caught / allowed)
+        run: python3 scripts/check_external_resources.py --self-test
+
+      - name: Fail on any external subresource
+        run: python3 scripts/check_external_resources.py index.html
+
+      - name: CNAME must match the canonical URL
+        run: test "$(cat CNAME)" = "registry.hlinor.com"
+
+      - name: HTML validation
+        run: |
+          pip install --quiet html5validator
+          html5validator --root . --ignore-re 'CSS:'
+
+      - name: Negation probe — malformed HTML must still fail despite CSS filtering
+        run: |
+          probe_dir="$(mktemp -d)"
+          trap 'rm -rf "$probe_dir"' EXIT
+          cat > "$probe_dir/bad.html" <<'HTML'
+          <!DOCTYPE html>
+          <html>
+          <head><style>p { color: definitely-not-a-color; }</style></head>
+          <body><div><p>unclosed element
+          </body>
+          </html>
+          HTML
+          pip install --quiet html5validator
+          if html5validator --root "$probe_dir" --ignore-re 'CSS:'; then
+            echo "NEGATION PROBE FAILED: malformed HTML did not fail validation"
+            exit 1
+          else
+            echo "negation probe OK: HTML errors still fail while CSS: is filtered"
+          fi

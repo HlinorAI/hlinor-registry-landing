@@ -1,0 +1,7 @@
+{
+  // registry.hlinor.com — static landing served by Cloudflare Worker "morning-violet-5f09"
+  "name": "morning-violet-5f09",
+  "compatibility_date": "2026-07-25",
+  "preview_urls": false,
+  "assets": { "directory": "." }
+}

@@ -1,14 +1,34 @@
 # Hlinor Agent Registry — landing page
 
 Single static page served at [registry.hlinor.com](https://registry.hlinor.com)
-via GitHub Pages. The product itself lives in
+by the Cloudflare Worker `morning-violet-5f09` (static assets only). The product
+itself lives in
 [HlinorAI/hlinor-agent-registry](https://github.com/HlinorAI/hlinor-agent-registry)
 (PyPI: [`hlinor-registry`](https://pypi.org/project/hlinor-registry/)).
 
 ## Deployment
 
-GitHub Pages from `main` with the custom domain from `CNAME`.
-`.nojekyll` keeps the page served as-is.
+The page is deployed with Wrangler from a logged-in machine:
+
+```bash
+npx wrangler deploy
+```
+
+`wrangler.jsonc` binds the deploy to the Worker `morning-violet-5f09`, which owns
+the custom domain `registry.hlinor.com`. `.assetsignore` publishes only
+`index.html`; the rest of the repository is never uploaded. A push to `main`
+does not deploy anything: deploy after the change is merged.
+
+Preview locally with `npx wrangler dev`.
+
+GitHub Pages is not enabled for this repository. `CNAME` and `.nojekyll` are
+left over from that setup; `CNAME` is still checked by CI as the canonical host.
+
+Cloudflare Web Analytics on the `hlinor.com` zone injects its beacon script into
+pages served at the edge, including this one. That script is not part of
+`index.html` and is not caught by `check_external_resources.py`. To keep the
+"no third-party runtime code" guarantee on the live page, exclude
+`registry.hlinor.com` from Web Analytics in the Cloudflare dashboard.
 
 ## Editing the page
 
